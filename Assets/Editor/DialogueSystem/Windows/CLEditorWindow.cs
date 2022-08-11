@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 
 
-namespace CleanDialogue
+namespace CleanDialogue.Windows
 {
     public class CLEditorWindow : EditorWindow
     {

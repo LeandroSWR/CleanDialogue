@@ -6,8 +6,10 @@ using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace CleanDialogue
+namespace CleanDialogue.Windows
 {
+    using Elements;
+
     public class CLGraphView : GraphView
     {
         public CLGraphView()
@@ -16,7 +18,19 @@ namespace CleanDialogue
 
             AddGridBackground();
 
+            CreateNode();
+
             AddStyles();
+        }
+
+        private void CreateNode()
+        {
+            CLNode node = new CLNode();
+
+            node.Initialize();
+            node.Draw();
+
+            AddElement(node);
         }
 
         private void AddManipulators()
