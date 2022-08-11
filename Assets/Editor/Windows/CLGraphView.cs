@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
@@ -11,9 +12,17 @@ namespace CleanDialogue
     {
         public CLGraphView()
         {
+            AddManipulators();
+
             AddGridBackground();
 
             AddStyles();
+        }
+
+        private void AddManipulators()
+        {
+            SetupZoom(ContentZoomer.DefaultMinScale, ContentZoomer.DefaultMaxScale);
+            this.AddManipulator(new ContentDragger());
         }
 
         private void AddStyles()
