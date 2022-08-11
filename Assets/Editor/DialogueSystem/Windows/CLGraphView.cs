@@ -25,8 +25,11 @@ namespace CleanDialogue.Windows
         {
             SetupZoom(ContentZoomer.DefaultMinScale, ContentZoomer.DefaultMaxScale);
 
-            this.AddManipulator(CreateNodeContextualMenu());
             this.AddManipulator(new ContentDragger());
+            this.AddManipulator(new SelectionDragger());
+            this.AddManipulator(new RectangleSelector());
+            
+            this.AddManipulator(CreateNodeContextualMenu());
         }
 
         private IManipulator CreateNodeContextualMenu() =>
