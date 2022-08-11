@@ -18,25 +18,32 @@ namespace CleanDialogue.Windows
 
             AddGridBackground();
 
-            CreateNode();
-
             AddStyles();
-        }
-
-        private void CreateNode()
-        {
-            CLNode node = new CLNode();
-
-            node.Initialize();
-            node.Draw();
-
-            AddElement(node);
         }
 
         private void AddManipulators()
         {
             SetupZoom(ContentZoomer.DefaultMinScale, ContentZoomer.DefaultMaxScale);
+
+            this.AddManipulator(CreateNodeContextualMenu());
             this.AddManipulator(new ContentDragger());
+        }
+
+        private IManipulator CreateNodeContextualMenu() =>
+            new ContextualMenuManipulator(
+                menuEvent => menuEvent.menu.AppendAction(
+                    "Add Node", 
+                    actionEvent => AddElement(CreateNode(actionEvent.eventInfo.localMousePosition)))
+            );
+
+        private CLNode CreateNode(Vector2 position)
+        {
+            CLNode node = new CLNode();
+
+            node.Initialize(position);
+            node.Draw();
+
+            return node;
         }
 
         private void AddStyles()

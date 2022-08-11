@@ -7,6 +7,7 @@ using UnityEngine.UIElements;
 namespace CleanDialogue.Elements
 {
     using Enumerations;
+
     public class CLNode : Node
     {
         public string DialogueName { get; set; }
@@ -14,11 +15,13 @@ namespace CleanDialogue.Elements
         public string Text { get; set; }
         public CLDialogueType DialogueType { get; set; }
 
-        public void Initialize()
+        public void Initialize(Vector2 position)
         {
             DialogueName = "DialogueName";
             Choices = new List<string>();
             Text = "Dialogue Text";
+
+            SetPosition(new Rect(position, Vector2.zero));
         }
 
         public void Draw()
