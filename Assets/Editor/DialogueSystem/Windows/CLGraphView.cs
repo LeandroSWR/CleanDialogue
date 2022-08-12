@@ -9,6 +9,7 @@ using UnityEngine.UIElements;
 namespace CleanDialogue.Windows
 {
     using Elements;
+    using Enumerations;
 
     public class CLGraphView : GraphView
     {
@@ -29,19 +30,21 @@ namespace CleanDialogue.Windows
             this.AddManipulator(new SelectionDragger());
             this.AddManipulator(new RectangleSelector());
             
-            this.AddManipulator(CreateNodeContextualMenu());
+            this.AddManipulator(CreateNodeContextualMenu("Add Node (Single Choice)", CLDialogueType.SingleChoice));
+            this.AddManipulator(CreateNodeContextualMenu("Add Node (Multiple Choice)", CLDialogueType.MultipleChoice));
         }
 
-        private IManipulator CreateNodeContextualMenu() =>
+        private IManipulator CreateNodeContextualMenu(string actionTitle, CLDialogueType dialogueType) =>
             new ContextualMenuManipulator(
                 menuEvent => menuEvent.menu.AppendAction(
-                    "Add Node", 
-                    actionEvent => AddElement(CreateNode(actionEvent.eventInfo.localMousePosition)))
+                    actionTitle, 
+                    actionEvent => AddElement(CreateNode(dialogueType, actionEvent.eventInfo.localMousePosition)))
             );
 
-        private CLNode CreateNode(Vector2 position)
+        private CLNode CreateNode(CLDialogueType dialogueType, Vector2 position)
         {
-            CLNode node = new CLNode();
+            Type nodeType = Type.GetType($"CleanDialogue.Elements.CL{dialogueType}Node");
+            CLNode node = (CLNode)Activator.CreateInstance(nodeType);
 
             node.Initialize(position);
             node.Draw();
@@ -51,9 +54,11 @@ namespace CleanDialogue.Windows
 
         private void AddStyles()
         {
-            StyleSheet styleSheet = (StyleSheet)EditorGUIUtility.Load("DialogueSystem/CLGraphViewStyles.uss");
+            StyleSheet graphViewStyles = (StyleSheet)EditorGUIUtility.Load("DialogueSystem/CLGraphViewStyles.uss");
+            StyleSheet nodeStyles = (StyleSheet)EditorGUIUtility.Load("DialogueSystem/CLNodeStyles.uss");
 
-            styleSheets.Add(styleSheet);
+            styleSheets.Add(graphViewStyles);
+            styleSheets.Add(nodeStyles);
         }
 
         private void AddGridBackground()

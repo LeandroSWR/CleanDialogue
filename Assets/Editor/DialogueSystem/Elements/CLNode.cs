@@ -15,22 +15,29 @@ namespace CleanDialogue.Elements
         public string Text { get; set; }
         public CLDialogueType DialogueType { get; set; }
 
-        public void Initialize(Vector2 position)
+        public virtual void Initialize(Vector2 position)
         {
             DialogueName = "DialogueName";
             Choices = new List<string>();
             Text = "Dialogue Text";
 
             SetPosition(new Rect(position, Vector2.zero));
+
+            mainContainer.AddToClassList("cl-node__main-container");
+            extensionContainer.AddToClassList("cl-node__extension-container");
         }
 
-        public void Draw()
+        public virtual void Draw()
         {
             // Title Container
             TextField dialogueNameTextField = new TextField()
             {
                 value = DialogueName
             };
+
+            dialogueNameTextField.AddToClassList("cl-node__text-field");
+            dialogueNameTextField.AddToClassList("cl-node__filename-text-field");
+            dialogueNameTextField.AddToClassList("cl-node__text-field__hidden");
 
             titleContainer.Insert(0, dialogueNameTextField);
 
@@ -46,6 +53,8 @@ namespace CleanDialogue.Elements
             // Extentions container
             VisualElement customDataContainer = new VisualElement();
 
+            customDataContainer.AddToClassList("cl-node__custom-data-container");
+
             Foldout textFoldout = new Foldout()
             {
                 text = "Dialogue Text"
@@ -56,12 +65,13 @@ namespace CleanDialogue.Elements
                 value = Text
             };
 
+            textField.AddToClassList("cl-node__text-field");
+            textField.AddToClassList("cl-node__quote-text-field");
+
             textFoldout.Add(textField);
             customDataContainer.Add(textFoldout);
 
             extensionContainer.Add(customDataContainer);
-
-            RefreshExpandedState();
         }
     }
 }
