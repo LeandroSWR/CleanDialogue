@@ -7,6 +7,7 @@ using UnityEngine.UIElements;
 namespace CleanDialogue.Elements
 {
     using Enumerations;
+    using Utilities;
 
     public class CLNode : Node
     {
@@ -30,23 +31,19 @@ namespace CleanDialogue.Elements
         public virtual void Draw()
         {
             // Title Container
-            TextField dialogueNameTextField = new TextField()
-            {
-                value = DialogueName
-            };
+            TextField dialogueNameTextField = CLElementUtilities.CreateTextField(DialogueName);
 
-            dialogueNameTextField.AddToClassList("cl-node__text-field");
-            dialogueNameTextField.AddToClassList("cl-node__filename-text-field");
-            dialogueNameTextField.AddToClassList("cl-node__text-field__hidden");
+            dialogueNameTextField.AddClasses(
+                "cl-node__text-field",
+                "cl-node__filename-text-field",
+                "cl-node__text-field__hidden"
+            );
 
             titleContainer.Insert(0, dialogueNameTextField);
 
             // Input Container
-            Port inputPort = InstantiatePort(
-                Orientation.Horizontal, Direction.Input,
-                Port.Capacity.Multi, typeof(bool));
-
-            inputPort.portName = "Dialogue Connection";
+            Port inputPort = this.CreatePort("Dialogue Connection",
+                Orientation.Horizontal, Direction.Input, Port.Capacity.Multi);
 
             inputContainer.Add(inputPort);
 
@@ -55,18 +52,14 @@ namespace CleanDialogue.Elements
 
             customDataContainer.AddToClassList("cl-node__custom-data-container");
 
-            Foldout textFoldout = new Foldout()
-            {
-                text = "Dialogue Text"
-            };
+            Foldout textFoldout = CLElementUtilities.CreateFoldout("Dialogue Text");
 
-            TextField textField = new TextField()
-            {
-                value = Text
-            };
+            TextField textField = CLElementUtilities.CreateTextArea(Text);
 
-            textField.AddToClassList("cl-node__text-field");
-            textField.AddToClassList("cl-node__quote-text-field");
+            textField.AddClasses(
+                "cl-node__text-field",
+                "cl-node__quote-text-field"
+            );
 
             textFoldout.Add(textField);
             customDataContainer.Add(textFoldout);

@@ -10,17 +10,52 @@ namespace CleanDialogue.Windows
 {
     using Elements;
     using Enumerations;
+    using Utilities;
 
     public class CLGraphView : GraphView
     {
-        public CLGraphView()
+        private CLEditorWindow editorWindow;
+        private CLSearchWindow searchWindow;
+
+        public CLGraphView(CLEditorWindow clEditorWindow)
         {
+            editorWindow = clEditorWindow;
+
             AddManipulators();
-
+            AddSeachWindow();
             AddGridBackground();
-
+            
             AddStyles();
         }
+
+        
+
+        #region Overrided Methods
+
+        // Port connections between nodes
+        public override List<Port> GetCompatiblePorts(Port startPort, NodeAdapter nodeAdapter)
+        {
+            List<Port> compatiblePorts = new List<Port>();
+
+            ports.ForEach(port =>
+            {
+                if (startPort == port || 
+                startPort.node == port.node || 
+                startPort.direction == port.direction)
+                {
+                    return;
+                }
+
+                compatiblePorts.Add(port);
+
+            });
+
+            return compatiblePorts;
+        }
+
+        #endregion
+
+        #region Manipulators
 
         private void AddManipulators()
         {
@@ -32,16 +67,47 @@ namespace CleanDialogue.Windows
             
             this.AddManipulator(CreateNodeContextualMenu("Add Node (Single Choice)", CLDialogueType.SingleChoice));
             this.AddManipulator(CreateNodeContextualMenu("Add Node (Multiple Choice)", CLDialogueType.MultipleChoice));
+
+            this.AddManipulator(CreateGroupContextualMenu());
         }
+
+        private IManipulator CreateGroupContextualMenu() =>
+            new ContextualMenuManipulator(
+                menuEvent => menuEvent.menu.AppendAction(
+                    "Add Group",
+                    actionEvent => AddElement(
+                        CreateGroup(
+                            "DialogueGroup", 
+                            GetLocalMousePosition(actionEvent.eventInfo.localMousePosition))))
+            );
 
         private IManipulator CreateNodeContextualMenu(string actionTitle, CLDialogueType dialogueType) =>
             new ContextualMenuManipulator(
                 menuEvent => menuEvent.menu.AppendAction(
                     actionTitle, 
-                    actionEvent => AddElement(CreateNode(dialogueType, actionEvent.eventInfo.localMousePosition)))
+                    actionEvent => AddElement(
+                        CreateNode(
+                            dialogueType, 
+                            GetLocalMousePosition(actionEvent.eventInfo.localMousePosition))))
             );
 
-        private CLNode CreateNode(CLDialogueType dialogueType, Vector2 position)
+        #endregion
+
+        #region Element Creation
+
+        public Group CreateGroup(string title, Vector2 localMousePosition)
+        {
+            Group group = new Group()
+            {
+                title = title
+            };
+
+            group.SetPosition(new Rect(localMousePosition, Vector2.zero));
+
+            return group;
+        }
+
+        public CLNode CreateNode(CLDialogueType dialogueType, Vector2 position)
         {
             Type nodeType = Type.GetType($"CleanDialogue.Elements.CL{dialogueType}Node");
             CLNode node = (CLNode)Activator.CreateInstance(nodeType);
@@ -52,13 +118,21 @@ namespace CleanDialogue.Windows
             return node;
         }
 
-        private void AddStyles()
-        {
-            StyleSheet graphViewStyles = (StyleSheet)EditorGUIUtility.Load("DialogueSystem/CLGraphViewStyles.uss");
-            StyleSheet nodeStyles = (StyleSheet)EditorGUIUtility.Load("DialogueSystem/CLNodeStyles.uss");
+        #endregion
 
-            styleSheets.Add(graphViewStyles);
-            styleSheets.Add(nodeStyles);
+        #region Element Addition
+
+        private void AddSeachWindow()
+        {
+            if (searchWindow == null)
+            {
+                searchWindow = ScriptableObject.CreateInstance<CLSearchWindow>();
+
+                searchWindow.Initialize(this);
+            }
+
+            nodeCreationRequest = context =>
+                SearchWindow.Open(new SearchWindowContext(context.screenMousePosition), searchWindow);
         }
 
         private void AddGridBackground()
@@ -69,5 +143,33 @@ namespace CleanDialogue.Windows
 
             Insert(0, gridBackground);
         }
+
+        private void AddStyles()
+        {
+            this.AddStyleSheets(
+                "CLGraphViewStyles",
+                "CLNodeStyles"
+                );
+        }
+
+        #endregion
+
+        #region Utilities
+
+        public Vector2 GetLocalMousePosition(Vector2 mousePosition, bool isSearchWindow = false)
+        {
+            Vector2 worldMousePosition = mousePosition;
+
+            if (isSearchWindow)
+            {
+                worldMousePosition -= editorWindow.position.position;
+            }
+
+            Vector2 localMousePosition = contentViewContainer.WorldToLocal(worldMousePosition);
+
+            return localMousePosition;
+        }
+
+        #endregion
     }
 }

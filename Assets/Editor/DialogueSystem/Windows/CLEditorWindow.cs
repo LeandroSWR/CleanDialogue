@@ -6,6 +6,8 @@ using UnityEngine.UIElements;
 
 namespace CleanDialogue.Windows
 {
+    using Utilities;
+
     public class CLEditorWindow : EditorWindow
     {
         [MenuItem("Window/CL/Dialogue Graph")]
@@ -21,9 +23,11 @@ namespace CleanDialogue.Windows
             AddStyles();
         }
 
+#region Elements Addition
+
         private void AddGraphView()
         {
-            CLGraphView graphView = new CLGraphView();
+            CLGraphView graphView = new CLGraphView(this);
 
             // Stretch the graph view to window size
             graphView.StretchToParentSize();
@@ -34,9 +38,10 @@ namespace CleanDialogue.Windows
 
         private void AddStyles()
         {
-            StyleSheet styleSheet = (StyleSheet)EditorGUIUtility.Load("DialogueSystem/CLVariables.uss");
-
-            rootVisualElement.styleSheets.Add(styleSheet);
+            rootVisualElement.AddStyleSheets("CLVariables");
         }
+
+#endregion
+
     }
 }
