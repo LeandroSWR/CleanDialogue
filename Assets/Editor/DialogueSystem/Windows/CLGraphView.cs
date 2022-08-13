@@ -8,6 +8,7 @@ using UnityEngine.UIElements;
 
 namespace CleanDialogue.Windows
 {
+    using Data.Error;
     using Elements;
     using Enumerations;
     using Utilities;
@@ -17,14 +18,20 @@ namespace CleanDialogue.Windows
         private CLEditorWindow editorWindow;
         private CLSearchWindow searchWindow;
 
+        private SerializableDictionary<string, CLNodeErrorData> ungroupedNodes;
+
         public CLGraphView(CLEditorWindow clEditorWindow)
         {
             editorWindow = clEditorWindow;
 
+            ungroupedNodes = new SerializableDictionary<string, CLNodeErrorData>();
+
             AddManipulators();
             AddSeachWindow();
             AddGridBackground();
-            
+
+            OnElementsDeleted();
+
             AddStyles();
         }
 
@@ -112,10 +119,78 @@ namespace CleanDialogue.Windows
             Type nodeType = Type.GetType($"CleanDialogue.Elements.CL{dialogueType}Node");
             CLNode node = (CLNode)Activator.CreateInstance(nodeType);
 
-            node.Initialize(position);
+            node.Initialize(this, position);
             node.Draw();
 
+            AddUngroupedNode(node);
+
             return node;
+        }
+
+        #endregion
+
+        #region Callbacks
+        private void OnElementsDeleted()
+        {
+            deleteSelection = (operationName, askUser) =>
+            {
+                for (int i = selection.Count - 1; i >= 0; i--)
+                {
+                    if (selection[i] is CLNode)
+                    {
+                        RemoveUngroupedNode((CLNode)selection[i]);
+
+                        RemoveElement((CLNode)selection[i]);
+                    }
+                }
+            };
+        }
+        #endregion
+
+        #region Repeated Elements
+
+        public void AddUngroupedNode(CLNode node)
+        {
+            string nodeName = node.DialogueName;
+
+            if (!ungroupedNodes.ContainsKey(nodeName))
+            {
+                CLNodeErrorData nodeErrorData = new CLNodeErrorData();
+
+                nodeErrorData.Nodes.Add(node);
+
+                ungroupedNodes.Add(nodeName, nodeErrorData);
+
+                return;
+            }
+
+            ungroupedNodes[nodeName].Nodes.Add(node);
+
+            Color errorColor = ungroupedNodes[nodeName].ErrorData.Color;
+            node.SetErrorStyle(errorColor);
+
+            if (ungroupedNodes[nodeName].Nodes.Count == 2)
+            {
+                ungroupedNodes[nodeName].Nodes[0].SetErrorStyle(errorColor);
+            }
+
+            Debug.LogWarning($"There's multiple nodes with the same name: \"{nodeName}\".");
+        }
+
+        public void RemoveUngroupedNode(CLNode node)
+        {
+            ungroupedNodes[node.DialogueName].Nodes.Remove(node);
+
+            node.ResetStyle();
+
+            if (ungroupedNodes[node.DialogueName].Nodes.Count == 1)
+            {
+                ungroupedNodes[node.DialogueName].Nodes[0].ResetStyle();
+            }
+            else if (ungroupedNodes[node.DialogueName].Nodes.Count == 0)
+            {
+                ungroupedNodes.Remove(node.DialogueName);
+            }
         }
 
         #endregion

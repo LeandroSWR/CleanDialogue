@@ -8,12 +8,13 @@ namespace CleanDialogue.Elements
 {
     using Enumerations;
     using Utilities;
+    using Windows;
 
     public class CLMultipleChoiceNode : CLNode
     {
-        public override void Initialize(Vector2 position)
+        public override void Initialize(CLGraphView graphView, Vector2 position)
         {
-            base.Initialize(position);
+            base.Initialize(graphView, position);
 
             DialogueType = CLDialogueType.MultipleChoice;
 

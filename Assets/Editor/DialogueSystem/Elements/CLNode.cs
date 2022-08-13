@@ -8,6 +8,7 @@ namespace CleanDialogue.Elements
 {
     using Enumerations;
     using Utilities;
+    using Windows;
 
     public class CLNode : Node
     {
@@ -16,11 +17,18 @@ namespace CleanDialogue.Elements
         public string Text { get; set; }
         public CLDialogueType DialogueType { get; set; }
 
-        public virtual void Initialize(Vector2 position)
+        private CLGraphView graphView;
+        private Color defaultBackgroundColor;
+
+        public virtual void Initialize(CLGraphView graphView, Vector2 position)
         {
             DialogueName = "DialogueName";
             Choices = new List<string>();
             Text = "Dialogue Text";
+
+            this.graphView = graphView;
+
+            defaultBackgroundColor = new Color(29f / 255f, 29f / 255f, 30f / 255f);
 
             SetPosition(new Rect(position, Vector2.zero));
 
@@ -31,7 +39,14 @@ namespace CleanDialogue.Elements
         public virtual void Draw()
         {
             // Title Container
-            TextField dialogueNameTextField = CLElementUtilities.CreateTextField(DialogueName);
+            TextField dialogueNameTextField = CLElementUtilities.CreateTextField(DialogueName, callback => 
+            {
+                graphView.RemoveUngroupedNode(this);
+
+                DialogueName = callback.newValue;
+
+                graphView.AddUngroupedNode(this);
+            });
 
             dialogueNameTextField.AddClasses(
                 "cl-node__text-field",
@@ -66,5 +81,11 @@ namespace CleanDialogue.Elements
 
             extensionContainer.Add(customDataContainer);
         }
+
+        public void SetErrorStyle(Color color) =>
+            mainContainer.style.backgroundColor = color;
+
+        public void ResetStyle() =>
+            mainContainer.style.backgroundColor = defaultBackgroundColor;
     }
 }
