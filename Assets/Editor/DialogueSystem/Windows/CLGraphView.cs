@@ -18,19 +18,26 @@ namespace CleanDialogue.Windows
         private CLEditorWindow editorWindow;
         private CLSearchWindow searchWindow;
 
+        private SerializableDictionary<string, CLGroupErrorData> groups;
         private SerializableDictionary<string, CLNodeErrorData> ungroupedNodes;
+        private SerializableDictionary<Group, SerializableDictionary<string, CLNodeErrorData>> groupedNodes;
 
         public CLGraphView(CLEditorWindow clEditorWindow)
         {
             editorWindow = clEditorWindow;
 
+            groups = new SerializableDictionary<string, CLGroupErrorData>();
             ungroupedNodes = new SerializableDictionary<string, CLNodeErrorData>();
+            groupedNodes = new SerializableDictionary<Group, SerializableDictionary<string, CLNodeErrorData>>();
 
             AddManipulators();
             AddSeachWindow();
             AddGridBackground();
 
             OnElementsDeleted();
+            OnGroupElementsAdded();
+            OnGroupElementsRemoved();
+            OnGroupRenamed();
 
             AddStyles();
         }
@@ -82,10 +89,9 @@ namespace CleanDialogue.Windows
             new ContextualMenuManipulator(
                 menuEvent => menuEvent.menu.AppendAction(
                     "Add Group",
-                    actionEvent => AddElement(
-                        CreateGroup(
-                            "DialogueGroup", 
-                            GetLocalMousePosition(actionEvent.eventInfo.localMousePosition))))
+                    actionEvent => CreateGroup(
+                        "DialogueGroup", 
+                        GetLocalMousePosition(actionEvent.eventInfo.localMousePosition)))
             );
 
         private IManipulator CreateNodeContextualMenu(string actionTitle, CLDialogueType dialogueType) =>
@@ -102,14 +108,21 @@ namespace CleanDialogue.Windows
 
         #region Element Creation
 
-        public Group CreateGroup(string title, Vector2 localMousePosition)
+        public CLGroup CreateGroup(string title, Vector2 localMousePosition) 
         {
-            Group group = new Group()
-            {
-                title = title
-            };
+            CLGroup group = new CLGroup(title, localMousePosition);
 
-            group.SetPosition(new Rect(localMousePosition, Vector2.zero));
+            AddGroup(group);
+
+            AddElement(group);
+
+            foreach(GraphElement selectedElement in selection)
+            {
+                if (selectedElement is CLNode)
+                {
+                    group.AddElement((CLNode) selectedElement);
+                }
+            }
 
             return group;
         }
@@ -134,62 +147,254 @@ namespace CleanDialogue.Windows
         {
             deleteSelection = (operationName, askUser) =>
             {
+                Type groupType = typeof(CLGroup);
+                Type edgeType = typeof(Edge);
+
+                List<Edge> edgesToDelete = new List<Edge>();
+
                 for (int i = selection.Count - 1; i >= 0; i--)
                 {
                     if (selection[i] is CLNode)
                     {
+                        if (((CLNode)selection[i]).Group != null)
+                        {
+                            ((CLNode)selection[i]).Group.RemoveElement((CLNode)selection[i]);
+                        }
+
                         RemoveUngroupedNode((CLNode)selection[i]);
+
+                        ((CLNode)selection[i]).DisconnectAllPorts();
 
                         RemoveElement((CLNode)selection[i]);
                     }
+                    else if (selection[i].GetType() == groupType)
+                    {
+                        RemoveGroup((CLGroup)selection[i]);
+
+                        List<CLNode> groupNodes = new List<CLNode>();
+
+                        foreach (GraphElement groupElement in ((CLGroup) selection[i]).containedElements)
+                        {
+                            if (groupElement is CLNode)
+                            {
+                                groupNodes.Add((CLNode)groupElement);
+                            }
+                        }
+
+                        ((CLGroup)selection[i]).RemoveElements(groupNodes);
+
+                        RemoveElement((CLGroup)selection[i]);
+                    }
+                    else if (selection[i].GetType() == edgeType)
+                    {
+                        edgesToDelete.Add((Edge)selection[i]);
+                    }
+                }
+
+                DeleteElements(edgesToDelete);
+            };
+        }
+
+        private void OnGroupElementsAdded()
+        {
+            elementsAddedToGroup = (group, elements) =>
+            {
+                foreach (GraphElement element in elements)
+                {
+                    if (!(element is CLNode))
+                    {
+                        continue;
+                    }
+
+                    CLNode node = (CLNode) element;
+
+                    RemoveUngroupedNode(node);
+                    AddGroupedNode(node, (CLGroup)group);
                 }
             };
         }
+
+        private void OnGroupElementsRemoved()
+        {
+            elementsRemovedFromGroup = (group, elements) =>
+            {
+                foreach (GraphElement element in elements)
+                {
+                    if (!(element is CLNode))
+                    {
+                        continue;
+                    }
+
+                    CLNode node = (CLNode)element;
+
+                    RemoveGroupedNode(node, group);
+                    AddUngroupedNode(node);
+                }
+            };
+        }
+
+        private void OnGroupRenamed()
+        {
+            groupTitleChanged = (group, newTitle) =>
+            {
+                RemoveGroup((CLGroup) group);
+
+                ((CLGroup) group).oldTitle = newTitle;
+
+                AddGroup((CLGroup)group);
+            };
+        }
+
         #endregion
 
         #region Repeated Elements
 
         public void AddUngroupedNode(CLNode node)
         {
-            string nodeName = node.DialogueName;
-
-            if (!ungroupedNodes.ContainsKey(nodeName))
+            if (!ungroupedNodes.ContainsKey(node.DialogueName))
             {
                 CLNodeErrorData nodeErrorData = new CLNodeErrorData();
 
                 nodeErrorData.Nodes.Add(node);
 
-                ungroupedNodes.Add(nodeName, nodeErrorData);
+                ungroupedNodes.Add(node.DialogueName, nodeErrorData);
 
                 return;
             }
 
-            ungroupedNodes[nodeName].Nodes.Add(node);
+            List<CLNode> ungroupedNodesList = ungroupedNodes[node.DialogueName].Nodes;
 
-            Color errorColor = ungroupedNodes[nodeName].ErrorData.Color;
+            ungroupedNodesList.Add(node);
+
+            Color errorColor = ungroupedNodes[node.DialogueName].ErrorData.Color;
             node.SetErrorStyle(errorColor);
 
-            if (ungroupedNodes[nodeName].Nodes.Count == 2)
+            if (ungroupedNodesList.Count == 2)
             {
-                ungroupedNodes[nodeName].Nodes[0].SetErrorStyle(errorColor);
+                ungroupedNodesList[0].SetErrorStyle(errorColor);
             }
 
-            Debug.LogWarning($"There's multiple nodes with the same name: \"{nodeName}\".");
+            Debug.LogWarning($"There's multiple nodes with the same name: \"{node.DialogueName}\".");
         }
 
         public void RemoveUngroupedNode(CLNode node)
         {
-            ungroupedNodes[node.DialogueName].Nodes.Remove(node);
+            List<CLNode> ungroupedNodesList = ungroupedNodes[node.DialogueName].Nodes;
+
+            ungroupedNodesList.Remove(node);
 
             node.ResetStyle();
 
-            if (ungroupedNodes[node.DialogueName].Nodes.Count == 1)
+            if (ungroupedNodesList.Count == 1)
             {
-                ungroupedNodes[node.DialogueName].Nodes[0].ResetStyle();
+                ungroupedNodesList[0].ResetStyle();
             }
-            else if (ungroupedNodes[node.DialogueName].Nodes.Count == 0)
+            else if (ungroupedNodesList.Count == 0)
             {
                 ungroupedNodes.Remove(node.DialogueName);
+            }
+        }
+
+        private void AddGroup(CLGroup group)
+        {
+            if (!groups.ContainsKey(group.title))
+            {
+                CLGroupErrorData groupErrorData = new CLGroupErrorData();
+
+                groupErrorData.Groups.Add(group);
+
+                groups.Add(group.title, groupErrorData);
+
+                return;
+            }
+
+            List<CLGroup> groupsList = groups[group.title].Groups;
+
+            groupsList.Add(group);
+
+            Color errorColor = groups[group.title].ErrorData.Color;
+            group.SetErrorStyle(errorColor);
+
+            if (groupsList.Count == 2)
+            {
+                groupsList[0].SetErrorStyle(errorColor);
+            }
+
+            Debug.LogWarning($"There's multiple groups with the same name: \"{group.title}\".");
+        }
+
+        private void RemoveGroup(CLGroup group)
+        {
+            List<CLGroup> groupsList = groups[group.oldTitle].Groups;
+
+            groupsList.Remove(group);
+
+            group.ResetStyle();
+
+            if (groupsList.Count == 1)
+            {
+                groupsList[0].ResetStyle();
+            }
+            else if (groupsList.Count == 0)
+            {
+                groups.Remove(group.oldTitle);
+            }
+        }
+
+        public void AddGroupedNode(CLNode node, CLGroup group)
+        {
+            if (!groupedNodes.ContainsKey(group))
+            {
+                groupedNodes.Add(group, new SerializableDictionary<string, CLNodeErrorData>());
+            }
+
+            node.Group = group;
+
+            if (!groupedNodes[group].ContainsKey(node.DialogueName))
+            {
+                CLNodeErrorData nodeErrorData = new CLNodeErrorData();
+                nodeErrorData.Nodes.Add(node);
+                groupedNodes[group].Add(node.DialogueName, nodeErrorData);
+                
+                return;
+            }
+
+            CLNodeErrorData clNodeErrorData = groupedNodes[group][node.DialogueName];
+
+            clNodeErrorData.Nodes.Add(node);
+
+            Color errorColor = clNodeErrorData.ErrorData.Color;
+
+            node.SetErrorStyle(errorColor);
+
+            if (clNodeErrorData.Nodes.Count == 2)
+            {
+                clNodeErrorData.Nodes[0].SetErrorStyle(errorColor);
+            }
+        }
+
+        public void RemoveGroupedNode(CLNode node, Group group)
+        {
+            List<CLNode> groupedNodesList = groupedNodes[group][node.DialogueName].Nodes;
+
+            groupedNodesList.Remove(node);
+
+            node.Group = null;
+
+            node.ResetStyle();
+
+            if (groupedNodesList.Count == 1)
+            {
+                groupedNodesList[0].ResetStyle();
+            }
+            else if (groupedNodesList.Count == 0)
+            {
+                groupedNodes[group].Remove(node.DialogueName);
+
+                if (groupedNodes[group].Count == 0)
+                {
+                    groupedNodes.Remove(group);
+                }
             }
         }
 

@@ -75,8 +75,7 @@ namespace CleanDialogue.Windows
 
                 // Create a group and return true to close the search window
                 case Group _:
-                    Group group = graphView.CreateGroup("Dialogue Group", localMousePosition);
-                    graphView.AddElement(group);
+                    graphView.CreateGroup("Dialogue Group", localMousePosition);
                     return true;
 
                 default:

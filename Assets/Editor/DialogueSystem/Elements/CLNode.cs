@@ -15,7 +15,9 @@ namespace CleanDialogue.Elements
         public string DialogueName { get; set; }
         public List<string> Choices { get; set; }
         public string Text { get; set; }
+
         public CLDialogueType DialogueType { get; set; }
+        public CLGroup Group { get; set; }
 
         private CLGraphView graphView;
         private Color defaultBackgroundColor;
@@ -41,11 +43,24 @@ namespace CleanDialogue.Elements
             // Title Container
             TextField dialogueNameTextField = CLElementUtilities.CreateTextField(DialogueName, callback => 
             {
-                graphView.RemoveUngroupedNode(this);
+                if (Group == null)
+                {
+                    graphView.RemoveUngroupedNode(this);
 
-                DialogueName = callback.newValue;
+                    DialogueName = callback.newValue;
 
-                graphView.AddUngroupedNode(this);
+                    graphView.AddUngroupedNode(this);
+                }
+                else
+                {
+                    CLGroup currentGroup = Group;
+
+                    graphView.RemoveGroupedNode(this, Group);
+                    
+                    DialogueName = callback.newValue;
+
+                    graphView.AddGroupedNode(this, currentGroup);
+                }
             });
 
             dialogueNameTextField.AddClasses(
@@ -82,10 +97,49 @@ namespace CleanDialogue.Elements
             extensionContainer.Add(customDataContainer);
         }
 
+        #region Overrided Methods
+
+        public override void BuildContextualMenu(ContextualMenuPopulateEvent evt)
+        {
+            evt.menu.AppendAction(
+                "Disconnect Input Ports", 
+                actionEvent => DisconnectPorts(inputContainer)
+            );
+            evt.menu.AppendAction(
+                "Disconnect Output Ports", 
+                actionEvent => DisconnectPorts(outputContainer)
+            );
+
+            base.BuildContextualMenu(evt);
+        }
+
+        #endregion
+
+        #region Utility Methods
+
+        public void DisconnectAllPorts()
+        {
+            DisconnectPorts(inputContainer);
+            DisconnectPorts(outputContainer);
+        }
+
+        private void DisconnectPorts(VisualElement container)
+        {
+            foreach (Port port in container.Children())
+            {
+                if (port.connected)
+                {
+                    graphView.DeleteElements(port.connections);
+                }
+            }
+        }
+
         public void SetErrorStyle(Color color) =>
             mainContainer.style.backgroundColor = color;
 
         public void ResetStyle() =>
             mainContainer.style.backgroundColor = defaultBackgroundColor;
+
+        #endregion
     }
 }
