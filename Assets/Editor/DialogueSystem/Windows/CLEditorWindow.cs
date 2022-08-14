@@ -2,6 +2,7 @@ using System;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
+using UnityEditor.UIElements;
 
 
 namespace CleanDialogue.Windows
@@ -10,6 +11,10 @@ namespace CleanDialogue.Windows
 
     public class CLEditorWindow : EditorWindow
     {
+        private readonly string defaultFileName = "DialoguesFileName";
+
+        private Button saveButton;
+
         [MenuItem("Window/CL/Dialogue Graph")]
         public static void Open()
         {
@@ -19,6 +24,7 @@ namespace CleanDialogue.Windows
         private void CreateGUI()
         {
             AddGraphView();
+            AddToolbar();
 
             AddStyles();
         }
@@ -36,12 +42,41 @@ namespace CleanDialogue.Windows
             
         }
 
+        private void AddToolbar()
+        {
+            Toolbar toolbar = new Toolbar();
+
+            TextField fileNameTextField = CLElementUtilities.CreateTextField(defaultFileName, "File Name:");
+
+            saveButton = CLElementUtilities.CreateButton("Save");
+
+            toolbar.Add(fileNameTextField);
+            toolbar.Add(saveButton);
+
+            toolbar.AddStyleSheets("CLToolbarStyles");
+
+            rootVisualElement.Add(toolbar);
+        }
+
         private void AddStyles()
         {
             rootVisualElement.AddStyleSheets("CLVariables");
         }
 
-#endregion
+        #endregion
 
+        #region Utility Methods
+
+        public void EnableSaving()
+        {
+            saveButton.SetEnabled(true);
+        }
+
+        public void DisableSaving()
+        {
+            saveButton.SetEnabled(false);
+        }
+
+        #endregion
     }
 }

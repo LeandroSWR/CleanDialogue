@@ -41,7 +41,7 @@ namespace CleanDialogue.Elements
         public virtual void Draw()
         {
             // Title Container
-            TextField dialogueNameTextField = CLElementUtilities.CreateTextField(DialogueName, callback => 
+            TextField dialogueNameTextField = CLElementUtilities.CreateTextField(DialogueName, null, callback => 
             {
                 if (Group == null)
                 {

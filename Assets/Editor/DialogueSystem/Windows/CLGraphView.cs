@@ -22,6 +22,25 @@ namespace CleanDialogue.Windows
         private SerializableDictionary<string, CLNodeErrorData> ungroupedNodes;
         private SerializableDictionary<Group, SerializableDictionary<string, CLNodeErrorData>> groupedNodes;
 
+        private int repeatedNamesAmount;
+        public int RepeatedNamesAmount
+        {
+            get => repeatedNamesAmount;
+            set
+            {
+                repeatedNamesAmount = value;
+
+                if (repeatedNamesAmount == 0)
+                {
+                    editorWindow.EnableSaving();
+                }
+                else
+                {
+                    editorWindow.DisableSaving();
+                }
+            }
+        }
+
         public CLGraphView(CLEditorWindow clEditorWindow)
         {
             editorWindow = clEditorWindow;
@@ -271,6 +290,8 @@ namespace CleanDialogue.Windows
 
             if (ungroupedNodesList.Count == 2)
             {
+                ++RepeatedNamesAmount;
+
                 ungroupedNodesList[0].SetErrorStyle(errorColor);
             }
 
@@ -287,6 +308,8 @@ namespace CleanDialogue.Windows
 
             if (ungroupedNodesList.Count == 1)
             {
+                --RepeatedNamesAmount;
+
                 ungroupedNodesList[0].ResetStyle();
             }
             else if (ungroupedNodesList.Count == 0)
@@ -317,6 +340,8 @@ namespace CleanDialogue.Windows
 
             if (groupsList.Count == 2)
             {
+                ++RepeatedNamesAmount;
+
                 groupsList[0].SetErrorStyle(errorColor);
             }
 
@@ -333,6 +358,8 @@ namespace CleanDialogue.Windows
 
             if (groupsList.Count == 1)
             {
+                --RepeatedNamesAmount;
+
                 groupsList[0].ResetStyle();
             }
             else if (groupsList.Count == 0)
@@ -369,6 +396,8 @@ namespace CleanDialogue.Windows
 
             if (clNodeErrorData.Nodes.Count == 2)
             {
+                ++RepeatedNamesAmount;
+
                 clNodeErrorData.Nodes[0].SetErrorStyle(errorColor);
             }
         }
@@ -385,6 +414,8 @@ namespace CleanDialogue.Windows
 
             if (groupedNodesList.Count == 1)
             {
+                --RepeatedNamesAmount;
+
                 groupedNodesList[0].ResetStyle();
             }
             else if (groupedNodesList.Count == 0)
