@@ -260,7 +260,7 @@ namespace CleanDialogue.Windows
 
                 RemoveGroup((CLGroup) group);
 
-                ((CLGroup) group).oldTitle = ((CLGroup)group).title;
+                ((CLGroup) group).OldTitle = ((CLGroup)group).title;
 
                 AddGroup((CLGroup)group);
             };
@@ -358,7 +358,7 @@ namespace CleanDialogue.Windows
 
         private void RemoveGroup(CLGroup group)
         {
-            string oldGroupName = group.oldTitle.ToLower();
+            string oldGroupName = group.OldTitle.ToLower();
 
             List<CLGroup> groupsList = groups[oldGroupName].Groups;
 

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEditor.Experimental.GraphView;
@@ -12,6 +13,7 @@ namespace CleanDialogue.Elements
 
     public class CLNode : Node
     {
+        public string ID { get; set; }
         public string DialogueName { get; set; }
         public List<string> Choices { get; set; }
         public string Text { get; set; }
@@ -24,6 +26,7 @@ namespace CleanDialogue.Elements
 
         public virtual void Initialize(CLGraphView graphView, Vector2 position)
         {
+            ID = Guid.NewGuid().ToString();
             DialogueName = "DialogueName";
             Choices = new List<string>();
             Text = "Dialogue Text";
