@@ -13,6 +13,7 @@ namespace CleanDialogue.Windows
     {
         private readonly string defaultFileName = "DialoguesFileName";
 
+        private TextField fileNameTextField;
         private Button saveButton;
 
         [MenuItem("Window/CL/Dialogue Graph")]
@@ -46,7 +47,13 @@ namespace CleanDialogue.Windows
         {
             Toolbar toolbar = new Toolbar();
 
-            TextField fileNameTextField = CLElementUtilities.CreateTextField(defaultFileName, "File Name:");
+            fileNameTextField = CLElementUtilities.CreateTextField(
+                defaultFileName, 
+                "File Name:", 
+                callback => 
+                {
+                    fileNameTextField.value = callback.newValue.RemoveWhitespaces().RemoveSpecialCharacters();
+                });
 
             saveButton = CLElementUtilities.CreateButton("Save");
 

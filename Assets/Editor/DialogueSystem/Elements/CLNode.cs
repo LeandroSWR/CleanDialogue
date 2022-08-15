@@ -43,11 +43,15 @@ namespace CleanDialogue.Elements
             // Title Container
             TextField dialogueNameTextField = CLElementUtilities.CreateTextField(DialogueName, null, callback => 
             {
+                TextField target = (TextField) callback.target;
+
+                target.value = callback.newValue.RemoveWhitespaces().RemoveSpecialCharacters();
+
                 if (Group == null)
                 {
                     graphView.RemoveUngroupedNode(this);
 
-                    DialogueName = callback.newValue;
+                    DialogueName = target.value;
 
                     graphView.AddUngroupedNode(this);
                 }
@@ -57,7 +61,7 @@ namespace CleanDialogue.Elements
 
                     graphView.RemoveGroupedNode(this, Group);
                     
-                    DialogueName = callback.newValue;
+                    DialogueName = target.value;
 
                     graphView.AddGroupedNode(this, currentGroup);
                 }
