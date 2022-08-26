@@ -8,6 +8,7 @@ namespace CleanDialogue.Elements
     using Enumerations;
     using Utilities;
     using Windows;
+    using Data.Save;
 
     public class CLSingleChoiceNode : CLNode
     {
@@ -17,7 +18,12 @@ namespace CleanDialogue.Elements
 
             DialogueType = CLDialogueType.SingleChoice;
 
-            Choices.Add("Next Dialogue");
+            CLChoiceSaveData choiceData = new CLChoiceSaveData()
+            {
+                Text = "Next Dialogue"
+            };
+
+            Choices.Add(choiceData);
         }
 
         public override void Draw()
@@ -26,9 +32,11 @@ namespace CleanDialogue.Elements
 
             // Output Container
 
-            foreach (string choice in Choices)
+            foreach (CLChoiceSaveData choice in Choices)
             {
-                Port choicePort = this.CreatePort(choice);
+                Port choicePort = this.CreatePort(choice.Text);
+
+                choicePort.userData = choice;
 
                 outputContainer.Add(choicePort);
             }

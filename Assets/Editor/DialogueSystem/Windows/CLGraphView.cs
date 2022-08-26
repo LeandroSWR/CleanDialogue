@@ -8,6 +8,7 @@ using UnityEngine.UIElements;
 
 namespace CleanDialogue.Windows
 {
+    using Data.Save;
     using Data.Error;
     using Elements;
     using Enumerations;
@@ -57,6 +58,7 @@ namespace CleanDialogue.Windows
             OnGroupElementsAdded();
             OnGroupElementsRemoved();
             OnGroupRenamed();
+            OnGraphViewChanged();
 
             AddStyles();
         }
@@ -263,6 +265,43 @@ namespace CleanDialogue.Windows
                 ((CLGroup) group).OldTitle = ((CLGroup)group).title;
 
                 AddGroup((CLGroup)group);
+            };
+        }
+
+        private void OnGraphViewChanged()
+        {
+            graphViewChanged = (changes) =>
+            {
+                if (changes.edgesToCreate != null)
+                {
+                    foreach (Edge edge in changes.edgesToCreate)
+                    {
+                        CLNode nextNode = (CLNode)edge.input.node;
+
+                        CLChoiceSaveData choiceData = (CLChoiceSaveData)edge.output.userData;
+
+                        choiceData.NodeID = nextNode.ID;
+                    }
+                }
+
+                if(changes.elementsToRemove != null)
+                {
+                    Type edgeType = typeof(Edge);
+
+                    foreach (GraphElement element in changes.elementsToRemove)
+                    {
+                        if (element.GetType() == edgeType)
+                        {
+                            Edge edge = (Edge)element;
+
+                            CLChoiceSaveData choiceData = (CLChoiceSaveData)edge.output.userData;
+
+                            choiceData.NodeID = "";
+                        }
+                    }
+                }
+
+                return changes;
             };
         }
 

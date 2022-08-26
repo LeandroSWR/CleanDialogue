@@ -10,25 +10,27 @@ namespace CleanDialogue.Elements
     using Enumerations;
     using Utilities;
     using Windows;
+    using Data.Save;
 
     public class CLNode : Node
     {
         public string ID { get; set; }
         public string DialogueName { get; set; }
-        public List<string> Choices { get; set; }
+        public List<CLChoiceSaveData> Choices { get; set; }
         public string Text { get; set; }
 
         public CLDialogueType DialogueType { get; set; }
         public CLGroup Group { get; set; }
 
-        private CLGraphView graphView;
+        protected CLGraphView graphView;
+
         private Color defaultBackgroundColor;
 
         public virtual void Initialize(CLGraphView graphView, Vector2 position)
         {
             ID = Guid.NewGuid().ToString();
             DialogueName = "DialogueName";
-            Choices = new List<string>();
+            Choices = new List<CLChoiceSaveData>();
             Text = "Dialogue Text";
 
             this.graphView = graphView;
