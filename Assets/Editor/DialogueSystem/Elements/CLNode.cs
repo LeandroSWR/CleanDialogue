@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEditor.Experimental.GraphView;
@@ -52,6 +53,21 @@ namespace CleanDialogue.Elements
 
                 target.value = callback.newValue.RemoveWhitespaces().RemoveSpecialCharacters();
 
+                if (string.IsNullOrEmpty(target.value))
+                {
+                    if (!string.IsNullOrEmpty(DialogueName))
+                    {
+                        ++graphView.NameErrorsAmount;
+                    }
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(DialogueName))
+                    {
+                        --graphView.NameErrorsAmount;
+                    }
+                }
+
                 if (Group == null)
                 {
                     graphView.RemoveUngroupedNode(this);
@@ -93,7 +109,10 @@ namespace CleanDialogue.Elements
 
             Foldout textFoldout = CLElementUtilities.CreateFoldout("Dialogue Text");
 
-            TextField textField = CLElementUtilities.CreateTextArea(Text);
+            TextField textField = CLElementUtilities.CreateTextArea(Text, null, callback =>
+            {
+                Text = callback.newValue;
+            });
 
             textField.AddClasses(
                 "cl-node__text-field",
@@ -142,6 +161,9 @@ namespace CleanDialogue.Elements
                 }
             }
         }
+
+        public bool IsStartingNode() =>
+            !((Port)inputContainer.Children().First()).connected;
 
         public void SetErrorStyle(Color color) =>
             mainContainer.style.backgroundColor = color;

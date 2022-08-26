@@ -13,7 +13,8 @@ namespace CleanDialogue.Windows
     {
         private readonly string defaultFileName = "DialoguesFileName";
 
-        private TextField fileNameTextField;
+        private CLGraphView graphView;
+        private static TextField fileNameTextField;
         private Button saveButton;
 
         [MenuItem("Window/CL/Dialogue Graph")]
@@ -34,7 +35,7 @@ namespace CleanDialogue.Windows
 
         private void AddGraphView()
         {
-            CLGraphView graphView = new CLGraphView(this);
+            graphView = new CLGraphView(this);
 
             // Stretch the graph view to window size
             graphView.StretchToParentSize();
@@ -55,10 +56,15 @@ namespace CleanDialogue.Windows
                     fileNameTextField.value = callback.newValue.RemoveWhitespaces().RemoveSpecialCharacters();
                 });
 
-            saveButton = CLElementUtilities.CreateButton("Save");
+            saveButton = CLElementUtilities.CreateButton("Save", () => Save());
 
+            Button clearButton = CLElementUtilities.CreateButton("Clear", () => Clear());
+            Button resetButton = CLElementUtilities.CreateButton("Reset", () => ResetGraph());
+            
             toolbar.Add(fileNameTextField);
             toolbar.Add(saveButton);
+            toolbar.Add(clearButton);
+            toolbar.Add(resetButton);
 
             toolbar.AddStyleSheets("CLToolbarStyles");
 
@@ -72,7 +78,45 @@ namespace CleanDialogue.Windows
 
         #endregion
 
+        #region Toolbar Actions
+
+        private void Save()
+        {
+            if (string.IsNullOrEmpty(fileNameTextField.value))
+            {
+                EditorUtility.DisplayDialog(
+                    "Invalid file name.",
+                    "Please ensure the file name you've typed in is valid.",
+                    "Ok."
+                );
+
+                return;
+            }
+
+            CLIOUtility.Initialize(graphView, fileNameTextField.value);
+            CLIOUtility.Save();
+        }
+
+        private void Clear()
+        {
+            graphView.ClearGraph();
+        }
+
+        private void ResetGraph()
+        {
+            Clear();
+            UpdateFileName(defaultFileName);
+        }
+
+        #endregion
+
+
         #region Utility Methods
+
+        public static void UpdateFileName(string newFileName)
+        {
+            fileNameTextField.value = newFileName;
+        }
 
         public void EnableSaving()
         {

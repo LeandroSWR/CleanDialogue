@@ -23,15 +23,15 @@ namespace CleanDialogue.Windows
         private SerializableDictionary<string, CLNodeErrorData> ungroupedNodes;
         private SerializableDictionary<Group, SerializableDictionary<string, CLNodeErrorData>> groupedNodes;
 
-        private int repeatedNamesAmount;
-        public int RepeatedNamesAmount
+        private int nameErrorsAmount;
+        public int NameErrorsAmount
         {
-            get => repeatedNamesAmount;
+            get => nameErrorsAmount;
             set
             {
-                repeatedNamesAmount = value;
+                nameErrorsAmount = value;
 
-                if (repeatedNamesAmount == 0)
+                if (nameErrorsAmount == 0)
                 {
                     editorWindow.EnableSaving();
                 }
@@ -258,7 +258,24 @@ namespace CleanDialogue.Windows
         {
             groupTitleChanged = (group, newTitle) =>
             {
-                ((CLGroup)group).title = newTitle.RemoveWhitespaces().RemoveSpecialCharacters();
+                CLGroup clGroup = (CLGroup)group;
+
+                clGroup.title = newTitle.RemoveWhitespaces().RemoveSpecialCharacters();
+
+                if (string.IsNullOrEmpty(clGroup.title))
+                {
+                    if (!string.IsNullOrEmpty(clGroup.OldTitle))
+                    {
+                        ++NameErrorsAmount;
+                    }
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(clGroup.OldTitle))
+                    {
+                        --NameErrorsAmount;
+                    }
+                }
 
                 RemoveGroup((CLGroup) group);
 
@@ -333,7 +350,7 @@ namespace CleanDialogue.Windows
 
             if (ungroupedNodesList.Count == 2)
             {
-                ++RepeatedNamesAmount;
+                ++NameErrorsAmount;
 
                 ungroupedNodesList[0].SetErrorStyle(errorColor);
             }
@@ -353,7 +370,7 @@ namespace CleanDialogue.Windows
 
             if (ungroupedNodesList.Count == 1)
             {
-                --RepeatedNamesAmount;
+                --NameErrorsAmount;
 
                 ungroupedNodesList[0].ResetStyle();
             }
@@ -387,7 +404,7 @@ namespace CleanDialogue.Windows
 
             if (groupsList.Count == 2)
             {
-                ++RepeatedNamesAmount;
+                ++NameErrorsAmount;
 
                 groupsList[0].SetErrorStyle(errorColor);
             }
@@ -407,7 +424,7 @@ namespace CleanDialogue.Windows
 
             if (groupsList.Count == 1)
             {
-                --RepeatedNamesAmount;
+                --NameErrorsAmount;
 
                 groupsList[0].ResetStyle();
             }
@@ -447,7 +464,7 @@ namespace CleanDialogue.Windows
 
             if (clNodeErrorData.Nodes.Count == 2)
             {
-                ++RepeatedNamesAmount;
+                ++NameErrorsAmount;
 
                 clNodeErrorData.Nodes[0].SetErrorStyle(errorColor);
             }
@@ -467,7 +484,7 @@ namespace CleanDialogue.Windows
 
             if (groupedNodesList.Count == 1)
             {
-                --RepeatedNamesAmount;
+                --NameErrorsAmount;
 
                 groupedNodesList[0].ResetStyle();
             }
@@ -532,6 +549,16 @@ namespace CleanDialogue.Windows
             Vector2 localMousePosition = contentViewContainer.WorldToLocal(worldMousePosition);
 
             return localMousePosition;
+        }
+
+        public void ClearGraph()
+        {
+            graphElements.ForEach(graphElement => RemoveElement(graphElement));
+
+            groups.Clear();
+            groupedNodes.Clear();
+            ungroupedNodes.Clear();
+            NameErrorsAmount = 0;
         }
 
         #endregion
